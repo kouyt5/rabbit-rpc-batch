@@ -29,8 +29,8 @@ class ExampleConsumer(object):
     """
     EXCHANGE = 'asrExchange'
     EXCHANGE_TYPE = ExchangeType.topic
-    QUEUE = 'cc1'
-    ROUTING_KEY = 'rpc'
+    QUEUE = 'asr-en'
+    ROUTING_KEY = 'rpc-en'
 
     def __init__(self, amqp_url):
         """Create a new instance of the consumer class, passing in the AMQP
@@ -49,10 +49,10 @@ class ExampleConsumer(object):
         # In production, experiment with higher prefetch values
         # for higher consumer throughput
         self._prefetch_count = 10
-        model_path = "checkpoints/QuartzNet15x5Base-Zh.nemo"
+        model_path = "checkpoints/en/QuartzNet15x5Base-En.nemo"
         lm_path = "checkpoints/zh_giga.no_cna_cmn.prune01244.klm"
         model = QuartznetModel(model_path=model_path,
-                            device="cuda:0", lang="cn", lm_path=lm_path, max_batch_size=10, use_lm=False)
+                            device="cuda:0", lang="en", lm_path=lm_path, max_batch_size=10, use_lm=False)
         service = AsrService(model=model)
         self.message_dispatcher = MessageDispatcher(callback=self.message_send_and_ack,max_queue_size=32, max_waiting_time=0.1, channel=self._channel,
                                                         service=service)

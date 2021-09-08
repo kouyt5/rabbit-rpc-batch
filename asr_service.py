@@ -80,20 +80,23 @@ class AsrService(Service):
         audio = io.BytesIO(audio)
         format=data['format']
         out_io = io.BytesIO()
-        if format=='mp3':
-            data = AudioSegment.from_mp3(audio)
-            data.export(out_f=out_io, format='wav')
-        elif format=='aac':
-            data = AudioSegment.from_file(audio)
-            data.export(out_f=out_io, format='wav')
+        if format=='aac' or format=='mp3':
+            try:
+                data = AudioSegment.from_file(audio)
+                data.export(out_f=out_io, format='wav')
+            except:
+                logging.error("音频格式解析错误")
+                sf.write(out_io, np.zeros((1600,), dtype=np.float32), samplerate=16000, 
+                                subtype='PCM_16', format='WAV')
+                out_io.seek(0)
         elif format=='wav':
-            out_io = audio
+            out_io = audio  # 如果wav格式有问题，由下一层处理
         else:
             logging.error("音频格式不支持, 返回0 zero padding...")
             sf.write(out_io, np.zeros((1600,), dtype=np.float32), samplerate=16000, 
                             subtype='PCM_16', format='WAV')
+            out_io.seek(0)
         return (seq, out_io)
-        # self.temp_safe_dict[seq] = out_io
         
 
         
