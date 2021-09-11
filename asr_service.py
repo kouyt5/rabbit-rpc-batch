@@ -62,12 +62,11 @@ class AsrService(Service):
         # 考虑到音频格式转换比较费时，这里使用多线程处理
         pre_time = time.time()
         results = self.pool.map(self.transform2wav, datas_seq)
-        logging.info("线程运行:"+str(time.time()-pre_time))
         # 打包结果转换
         results = list(results)
         results.sort(key=lambda item:item[0])
         seq_result = [results[i][1] for i in range(len(results))]  # [io.BytesIO(), io.BytesIO()....]
-        logging.info("结果封装:"+str(time.time()-pre_time))
+        logging.info("线程运行+结果封装:"+str(time.time()-pre_time))
         return seq_result
         
 

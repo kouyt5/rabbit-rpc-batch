@@ -108,11 +108,13 @@ class GuardThread(threading.Thread):
             # 判断queue是否有数据，如果没有，就继续loop 开始计时，保证一定时间内一定处理
             if self.safe_queue.qsize() == 0:
                 self.activate = False
+                logging.info("loop status 0")
             if (self.safe_queue.qsize() > 0) and not self.is_running:
                 # 如果静默状态突然有消息到达，或者运行状态结束队列又存在消息时，开启计时
                 if(not self.activate):
                     self.start_time = time.time()
                 self.activate = True
+                logging.info("loop status 1")
                 
             # 如果到达时间大于最大等待时间
             if self.activate and time.time()-self.start_time > self.max_waiting_time:
@@ -120,12 +122,14 @@ class GuardThread(threading.Thread):
                 logging.info(" 等待时间："+ str(time.time()-self.start_time))
                 # TODO self.is_running 无用，因为计算是阻塞式，计算完成之前，不可能进行新计算，考虑到将来多线程拓展，有必要引入此变量
                 self.compute(self.is_running)
+                logging.info("loop status 2")
 
             # 如果队列元素超过最大batch size，并且处于非运行状态直接计算
             if self.safe_queue.qsize() >= self.max_batch_size and not self.is_running:
                 self.activate = False
                 logging.info(" 等待时间："+ str(time.time()-self.start_time))
                 self.compute(self.is_running)
+                logging.info("loop status 3")
             # logging.debug("队列大小"+ str(self.safe_queue.qsize()))
             time.sleep(0.01) # 每隔10ms检测一次
 

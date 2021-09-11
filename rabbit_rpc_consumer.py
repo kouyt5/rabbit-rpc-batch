@@ -17,20 +17,11 @@ LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
 LOGGER = logging.getLogger(__name__)
 
 
-class ExampleConsumer(object):
-    """This is an example consumer that will handle unexpected interactions
-    with RabbitMQ such as channel and connection closures.
-    If RabbitMQ closes the connection, this class will stop and indicate
-    that reconnection is necessary. You should look at the output, as
-    there are limited reasons why the connection may be closed, which
-    usually are tied to permission related issues or socket timeouts.
-    If the channel is closed, it will indicate a problem with one of the
-    commands that were issued and that should surface in the output as well.
-    """
+class SelectRabbitConsumer:
     EXCHANGE = 'asrExchange'
     EXCHANGE_TYPE = ExchangeType.topic
-    QUEUE = 'asr-en'
-    ROUTING_KEY = 'rpc-en'
+    QUEUE = 'cc1'
+    ROUTING_KEY = 'rpc'
 
     def __init__(self, amqp_url):
         """Create a new instance of the consumer class, passing in the AMQP
@@ -39,20 +30,18 @@ class ExampleConsumer(object):
         """
         self.should_reconnect = False
         self.was_consuming = False
-
         self._connection = None
         self._channel = None
         self._closing = False
         self._consumer_tag = None
-        self._url = amqp_url
         self._consuming = False
         # In production, experiment with higher prefetch values
         # for higher consumer throughput
         self._prefetch_count = 10
-        model_path = "checkpoints/en/QuartzNet15x5Base-En.nemo"
+        model_path = "checkpoints/QuartzNet15x5Base-Zh.nemo"
         lm_path = "checkpoints/zh_giga.no_cna_cmn.prune01244.klm"
         model = QuartznetModel(model_path=model_path,
-                            device="cuda:0", lang="en", lm_path=lm_path, max_batch_size=10, use_lm=False)
+                            device="cuda:0", lang="cn", lm_path=lm_path, max_batch_size=10, use_lm=False)
         service = AsrService(model=model)
         self.message_dispatcher = MessageDispatcher(callback=self.message_send_and_ack,max_queue_size=32, max_waiting_time=0.1, channel=self._channel,
                                                         service=service)
@@ -382,7 +371,7 @@ class ReconnectingExampleConsumer(object):
     def __init__(self, amqp_url):
         self._reconnect_delay = 0
         self._amqp_url = amqp_url
-        self._consumer = ExampleConsumer(self._amqp_url)
+        self._consumer = SelectRabbitConsumer(self._amqp_url)
 
     def run(self):
         while True:
@@ -399,7 +388,7 @@ class ReconnectingExampleConsumer(object):
             reconnect_delay = self._get_reconnect_delay()
             LOGGER.info('Reconnecting after %d seconds', reconnect_delay)
             time.sleep(reconnect_delay)
-            self._consumer = ExampleConsumer(self._amqp_url)
+            self._consumer = SelectRabbitConsumer(self._amqp_url)
 
     def _get_reconnect_delay(self):
         if self._consumer.was_consuming:
@@ -412,7 +401,7 @@ class ReconnectingExampleConsumer(object):
 
 
 def main():
-    logging.basicConfig(filename='en-log.log',level=logging.INFO, format=LOG_FORMAT)
+    logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
     amqp_url = 'amqp://guest:guest@localhost:5672/%2F'
     consumer = ReconnectingExampleConsumer(amqp_url)
     consumer.run()

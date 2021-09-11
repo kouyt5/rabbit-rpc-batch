@@ -300,7 +300,7 @@ class ExampleConsumer(object):
         :param pika.Spec.BasicProperties: properties
         :param bytes body: The message body
         """
-        LOGGER.info('Received message # %s from %s: %s',
+        LOGGER.debug('Received message # %s from %s: %s',
                     basic_deliver.delivery_tag, properties.app_id, len(body))
 
         # 把消息提交给消息调度器
@@ -412,7 +412,7 @@ class ReconnectingExampleConsumer(object):
 
 
 def main():
-    logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+    logging.basicConfig(filename='cn-log.log',level=logging.INFO, format=LOG_FORMAT)
     amqp_url = 'amqp://guest:guest@localhost:5672/%2F'
     consumer = ReconnectingExampleConsumer(amqp_url)
     consumer.run()
