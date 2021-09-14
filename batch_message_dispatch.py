@@ -1,5 +1,4 @@
-from asr_service import AsrService
-from service import Service
+from base.service import Service
 import threading
 import time
 import random
@@ -10,14 +9,12 @@ import pika.adapters.blocking_connection
 
 
 """
-消息调度器，用于批处理数据
+消息调度器实现，用于批处理数据，多个数据来了会打包为一个batch输入到模型中，从而提高整体的吞吐量
 """
-class MessageDispatcher:
+class BatchMessageDispatcher:
     def __init__(self, callback, max_queue_size:int=32, max_waiting_time:float=0.1,
-                    channel:pika.adapters.blocking_connection.select_connection=None,
                     service:Service=None, max_batch_size=10):
         self.safe_queue = queue.Queue(maxsize=max_queue_size)  # 线程安全队列，用于存放数据
-        self.channel = channel
         self.message_send_and_ack = callback  # 回调函数
         self.service = service
         guard = GuardThread(max_waiting_time=max_waiting_time,safe_queue=self.safe_queue,
@@ -89,8 +86,11 @@ class MessageDispatcher:
 
 
 class GuardThread(threading.Thread):
+    """
+    守护进程，用于监听消息是否已经超过指定时间，从而分发数据到服务中
+    """
     def __init__(self, max_waiting_time:float=0.1, safe_queue=None, compute=None,max_batch_size=10):
-        threading.Thread.__init__(self)
+        threading.Thread.__init__(self, daemon=True)
         self.safe_queue = safe_queue
         self.activate = False  # 处理器激活，当有消息来的时候通知消息调度器可以开始处理了，开启一个计时器
         self.is_running = False  # 算法正在处理
@@ -108,13 +108,11 @@ class GuardThread(threading.Thread):
             # 判断queue是否有数据，如果没有，就继续loop 开始计时，保证一定时间内一定处理
             if self.safe_queue.qsize() == 0:
                 self.activate = False
-                logging.info("loop status 0")
             if (self.safe_queue.qsize() > 0) and not self.is_running:
                 # 如果静默状态突然有消息到达，或者运行状态结束队列又存在消息时，开启计时
                 if(not self.activate):
                     self.start_time = time.time()
                 self.activate = True
-                logging.info("loop status 1")
                 
             # 如果到达时间大于最大等待时间
             if self.activate and time.time()-self.start_time > self.max_waiting_time:
@@ -122,20 +120,19 @@ class GuardThread(threading.Thread):
                 logging.info(" 等待时间："+ str(time.time()-self.start_time))
                 # TODO self.is_running 无用，因为计算是阻塞式，计算完成之前，不可能进行新计算，考虑到将来多线程拓展，有必要引入此变量
                 self.compute(self.is_running)
-                logging.info("loop status 2")
 
             # 如果队列元素超过最大batch size，并且处于非运行状态直接计算
             if self.safe_queue.qsize() >= self.max_batch_size and not self.is_running:
                 self.activate = False
                 logging.info(" 等待时间："+ str(time.time()-self.start_time))
                 self.compute(self.is_running)
-                logging.info("loop status 3")
             # logging.debug("队列大小"+ str(self.safe_queue.qsize()))
             time.sleep(0.01) # 每隔10ms检测一次
 
 if __name__ == '__main__':
+    from base.service import AsrService
     logging.basicConfig(level=logging.DEBUG, format='%(levelname) -10s %(asctime)s %(name) -20s %(funcName) -25s %(lineno) -5d: %(message)s')
-    message_disaptcher = MessageDispatcher(None, max_queue_size=32, max_waiting_time=0.1, service=AsrService())
+    message_disaptcher = BatchMessageDispatcher(None, max_queue_size=32, max_waiting_time=0.1, service=AsrService())
     class Prop:
         correlation_id = "correlation_id"
         reply_to = "reply_to"

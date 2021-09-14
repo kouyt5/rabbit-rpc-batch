@@ -1,10 +1,10 @@
-from model import DispatchModel
+from base.model import DispatchModel
 import time
 from typing import List, Tuple, Union
 import nemo
 from nemo.collections.asr.metrics.wer import WER
 import torch
-from data_layer import AudioDataLayer
+from asr.data_layer import AudioDataLayer
 from torch.utils.data import DataLoader
 import nemo.collections.asr as nemo_asr
 from omegaconf import OmegaConf
@@ -176,6 +176,7 @@ class QuartznetModel(DispatchModel):
                 wav = scipy.signal.resample(wav, target_samples)  # 重采样的音频,比较耗时
                 logging.info("resample用时:{:.3f}".format(time.time()-pre_time))
         except:
+            logging.error("音频解析错误！")
             return np.zeros((16000,), dtype=np.float32), 0.1
         # np_audio = (np_audio_float*32768).astype(np.int)
         return wav, secs

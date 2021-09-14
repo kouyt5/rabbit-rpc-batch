@@ -1,6 +1,5 @@
-from model import DispatchModel
-from service import Service
-from asr_model import AsrModel
+from base.model import DispatchModel, ImplDispatchModel
+from base.service import Service
 import os
 from typing import List
 import multiprocessing as mp
@@ -101,7 +100,7 @@ class AsrService(Service):
         
 if __name__ == '__main__':
 
-    service = AsrService(AsrModel())
+    service = AsrService(ImplDispatchModel())
     data_list = []
     file_list = os.listdir('wav')
     for i in range(len(file_list)):

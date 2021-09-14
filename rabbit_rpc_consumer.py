@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=C0111,C0103,R0205
 
-from QuartzNetModel import QuartznetModel
-from asr_model import AsrModel
-from asr_service import AsrService
-from model import DispatchModel, ImplDispatchModel
+from base.message_dispatch import MessageDispatch, SimpleService
+from batch_message_dispatch import BatchMessageDispatcher
+from asr.QuartzNetModel import QuartznetModel
+from asr.asr_service import AsrService
+from base.model import DispatchModel, ImplDispatchModel
 import functools
 import logging
-from message_dispatch import MessageDispatcher
 import time
 import pika
 from pika.exchange_type import ExchangeType
@@ -18,16 +18,16 @@ LOGGER = logging.getLogger(__name__)
 
 
 class SelectRabbitConsumer:
-    EXCHANGE = 'asrExchange'
-    EXCHANGE_TYPE = ExchangeType.topic
-    QUEUE = 'cc1'
-    ROUTING_KEY = 'rpc'
 
-    def __init__(self, amqp_url):
+    def __init__(self, prefech_count:int=10, exchange:str='', exchange_type:str='topic', queue:str='', routing_key:str=''):
         """Create a new instance of the consumer class, passing in the AMQP
         URL used to connect to RabbitMQ.
         :param str amqp_url: The AMQP url to connect with
         """
+        self.EXCHANGE = exchange
+        self.EXCHANGE_TYPE = exchange_type  # ExchangeType.topic
+        self.QUEUE = queue
+        self.ROUTING_KEY = routing_key
         self.should_reconnect = False
         self.was_consuming = False
         self._connection = None
@@ -37,14 +37,8 @@ class SelectRabbitConsumer:
         self._consuming = False
         # In production, experiment with higher prefetch values
         # for higher consumer throughput
-        self._prefetch_count = 10
-        model_path = "checkpoints/QuartzNet15x5Base-Zh.nemo"
-        lm_path = "checkpoints/zh_giga.no_cna_cmn.prune01244.klm"
-        model = QuartznetModel(model_path=model_path,
-                            device="cuda:0", lang="cn", lm_path=lm_path, max_batch_size=10, use_lm=False)
-        service = AsrService(model=model)
-        self.message_dispatcher = MessageDispatcher(callback=self.message_send_and_ack,max_queue_size=32, max_waiting_time=0.1, channel=self._channel,
-                                                        service=service)
+        self._prefetch_count = prefech_count
+        self.message_dispatcher = None
 
     def message_send_and_ack(self, body:bytes, correlation_id:str, reply_to:str, delivery_tag:str):
         """
@@ -59,6 +53,14 @@ class SelectRabbitConsumer:
                                                          correlation_id),
                         body=body)
         self._channel.basic_ack(delivery_tag=delivery_tag)
+
+    def set_message_dispatcher(self, message_dispatcher:MessageDispatch):
+        """
+        设置消息调度器
+        """
+        if message_dispatcher is None:
+            raise Exception("消息调度器为空")
+        self.message_dispatcher = message_dispatcher
 
     def connect(self):
         """This method connects to RabbitMQ, returning the connection handle.
@@ -339,6 +341,12 @@ class SelectRabbitConsumer:
         """Run the example consumer by connecting to RabbitMQ and then
         starting the IOLoop to block and allow the SelectConnection to operate.
         """
+        # reset
+        self.should_reconnect = False
+        self.was_consuming = False
+        self._closing = False
+        self._consuming = False
+
         self._connection = self.connect()
         self._connection.ioloop.start()
 
@@ -363,17 +371,19 @@ class SelectRabbitConsumer:
             LOGGER.info('Stopped')
 
 
-class ReconnectingExampleConsumer(object):
+class ReconnectingManager:
     """This is an example consumer that will reconnect if the nested
     ExampleConsumer indicates that a reconnect is necessary.
     """
 
-    def __init__(self, amqp_url):
+    def __init__(self, consumer:SelectRabbitConsumer):
         self._reconnect_delay = 0
-        self._amqp_url = amqp_url
-        self._consumer = SelectRabbitConsumer(self._amqp_url)
+        self._consumer = consumer
 
     def run(self):
+        # check 消息调度器是否存在
+        if self._consumer.message_dispatcher is None:
+            raise Exception("消息调度器不存在，请调用set_message_dispatcher()设置调度器")
         while True:
             try:
                 self._consumer.run()
@@ -388,7 +398,7 @@ class ReconnectingExampleConsumer(object):
             reconnect_delay = self._get_reconnect_delay()
             LOGGER.info('Reconnecting after %d seconds', reconnect_delay)
             time.sleep(reconnect_delay)
-            self._consumer = SelectRabbitConsumer(self._amqp_url)
+            # self._consumer = 
 
     def _get_reconnect_delay(self):
         if self._consumer.was_consuming:
@@ -402,9 +412,21 @@ class ReconnectingExampleConsumer(object):
 
 def main():
     logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
-    amqp_url = 'amqp://guest:guest@localhost:5672/%2F'
-    consumer = ReconnectingExampleConsumer(amqp_url)
-    consumer.run()
+    model_path = "checkpoints/QuartzNet15x5Base-Zh.nemo"
+    lm_path = "checkpoints/zh_giga.no_cna_cmn.prune01244.klm"
+    # model = QuartznetModel(model_path=model_path,
+    #                     device="cuda:0", lang="cn", lm_path=lm_path, max_batch_size=10, use_lm=False)
+    # model = ImplDispatchModel()
+    service = SimpleService()
+    # service = AsrService(model=model)
+
+    rabbit_consumer = SelectRabbitConsumer(prefech_count=10, exchange='test', exchange_type=ExchangeType.direct, queue='test', routing_key='test')
+    message_dispatch = BatchMessageDispatcher(rabbit_consumer.message_send_and_ack, max_batch_size=32,
+                                        max_waiting_time=0.1, max_queue_size=32,
+                                        service=service)
+    rabbit_consumer.set_message_dispatcher(message_dispatcher=message_dispatch)
+    reconnect_manager = ReconnectingManager(rabbit_consumer)
+    reconnect_manager.run()
 
 
 if __name__ == '__main__':

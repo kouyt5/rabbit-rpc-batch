@@ -1,7 +1,7 @@
 version: "3"
 services:
     rabbitmq:
-        image: rabbitmq:3-management
+        image: rabbitmq:3.8.22-management
         restart: always
         environment:
             - RABBITMQ_DEFAULT_USER=guest

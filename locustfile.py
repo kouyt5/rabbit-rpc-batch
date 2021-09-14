@@ -1,11 +1,13 @@
 from locust import HttpUser, task
 import random
 import json
-import os
+import os, time
 
 
 class ConcurrentTest(HttpUser):
 
+    COUNT = 0
+    TOTAL_COUNT = 0
     @task
     def test_asr(self):
         wav_files = [os.path.join('.', 'wav', name) for name in os.listdir('wav')]
@@ -28,8 +30,13 @@ class ConcurrentTest(HttpUser):
             "audio": open(wav_file, 'rb')
         }
         data = {"format": 'wav'}
+        pre_time = time.time()
+        self.TOTAL_COUNT += 1
         with self.client.post("/asr", data=data, files=file, catch_response=True) as response:
             response_data = json.loads(str(response.content, encoding='utf-8'))
+            if time.time()-pre_time > 1.:
+                self.COUNT += 1
+                print("请求超过1000ms, {:d}/{:d}".format(self.COUNT, self.TOTAL_COUNT))
             if response_data["sentence"] == trans:
                 response.success()
             else:
