@@ -1,6 +1,6 @@
-from base.message_dispatch import SimpleMessageDispatch, SimpleService
-from base.model import ImplDispatchModel
-from batch_message_dispatch import BatchMessageDispatcher
+from message_dispatch import SimpleMessageDispatch, SimpleService
+from model import ImplDispatchModel
+from dispatcher.batch_message_dispatch import BatchMessageDispatcher
 from rabbit_rpc_consumer import ReconnectingManager, SelectRabbitConsumer
 from asr.asr_service import AsrService
 from asr.QuartzNetModel import QuartznetModel
@@ -15,8 +15,8 @@ def main():
     LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
               '-20s %(lineno) -5d: %(message)s')
     logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
-    model_path = "checkpoints/QuartzNet15x5Base-Zh.nemo"
-    lm_path = "checkpoints/zh_giga.no_cna_cmn.prune01244.klm"
+    model_path = "asr/checkpoints/QuartzNet15x5Base-Zh.nemo"
+    lm_path = "asr/checkpoints/zh_giga.no_cna_cmn.prune01244.klm"
     model = QuartznetModel(model_path=model_path,
                         device="cuda:0", lang="cn", lm_path=lm_path, max_batch_size=10, use_lm=False)
     # model = ImplDispatchModel()
@@ -53,8 +53,8 @@ def main3():
     LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
               '-20s %(lineno) -5d: %(message)s')
     logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
-    model_path = "checkpoints/en/QuartzNet15x5Base-En.nemo"
-    lm_path = "checkpoints/zh_giga.no_cna_cmn.prune01244.klm"
+    model_path = "asr/checkpoints/en/QuartzNet15x5Base-En.nemo"
+    lm_path = "asr/checkpoints/zh_giga.no_cna_cmn.prune01244.klm"
     model = QuartznetModel(model_path=model_path,
                         device="cuda:0", lang="en", lm_path=lm_path, max_batch_size=10, use_lm=False)
     service = AsrService(model=model)
@@ -67,4 +67,4 @@ def main3():
     reconnect_manager.run()
 
 if __name__=="__main__":
-    main()
+    main())

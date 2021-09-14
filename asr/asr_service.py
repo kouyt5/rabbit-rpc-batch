@@ -1,5 +1,5 @@
-from base.model import DispatchModel, ImplDispatchModel
-from base.service import Service
+from model import DispatchModel, ImplDispatchModel
+from service import Service
 import os
 from typing import List
 import multiprocessing as mp

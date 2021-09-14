@@ -1,4 +1,4 @@
-from base.model import DispatchModel
+from model import DispatchModel
 import time
 from typing import List, Tuple, Union
 import nemo

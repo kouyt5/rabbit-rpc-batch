@@ -1,4 +1,4 @@
-from base.service import Service
+from service import Service
 import threading
 import time
 import random

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=C0111,C0103,R0205
 
-from base.message_dispatch import MessageDispatch, SimpleService
-from batch_message_dispatch import BatchMessageDispatcher
+from message_dispatch import MessageDispatch, SimpleService
+from dispatcher.batch_message_dispatch import BatchMessageDispatcher
 from asr.QuartzNetModel import QuartznetModel
 from asr.asr_service import AsrService
-from base.model import DispatchModel, ImplDispatchModel
+from model import DispatchModel, ImplDispatchModel
 import functools
 import logging
 import time
