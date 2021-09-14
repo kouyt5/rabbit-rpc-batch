@@ -1,7 +1,7 @@
-from message_dispatch import SimpleMessageDispatch, SimpleService
-from model import ImplDispatchModel
-from dispatcher.batch_message_dispatch import BatchMessageDispatcher
-from rabbit_rpc_consumer import ReconnectingManager, SelectRabbitConsumer
+from rpcb.message_dispatch import SimpleMessageDispatch, SimpleService
+from rpcb.model import ImplDispatchModel
+from rpcb.dispatcher.batch_message_dispatch import BatchMessageDispatcher
+from rpcb.rabbit_rpc_consumer import ReconnectingManager, SelectRabbitConsumer
 from asr.asr_service import AsrService
 from asr.QuartzNetModel import QuartznetModel
 import logging
@@ -67,4 +67,4 @@ def main3():
     reconnect_manager.run()
 
 if __name__=="__main__":
-    main()
+    main3()

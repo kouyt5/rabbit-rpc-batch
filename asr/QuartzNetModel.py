@@ -1,4 +1,4 @@
-from model import DispatchModel
+from rpcb.model import DispatchModel
 import time
 from typing import List, Tuple, Union
 import nemo

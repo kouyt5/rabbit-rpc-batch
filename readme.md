@@ -33,15 +33,19 @@
 ```
 .
 ├── asr  # 语音识别模型实现
-├── dispatcher  # 批调度器实现
+│   ├── asr_service.py
+│   ├── checkpoints
+│   ├── data_layer.py
+│   ├── QuartzNetModel.py
 ├── docker-compose.yml  # rabbitmq
 ├── locustfile.py  # 性能测试
 ├── main.py  # 启动文件
-├── message_dispatch.py  # 批调度器基类
-├── model.py  # 模型基类
-├── rabbit_rpc_consumer.py  # 消息获取模块
-├── readme.md
-├── service.py  # 服务基类
+├── rpcb  # 调度底层
+│   ├── dispatcher  # 批调度器实现
+│   ├── message_dispatch.py  # 批调度器基类
+│   ├── model.py  # 模型基类
+│   ├── rabbit_rpc_consumer.py  # 消息获取模块
+│   └── service.py  # 服务基类
 ├── simple  # 简单的rpc实现
 ├── tools  # 工具类
 ```

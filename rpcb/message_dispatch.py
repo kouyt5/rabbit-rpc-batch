@@ -2,7 +2,7 @@
 
 from abc import ABCMeta, abstractmethod
 from typing import List
-from service import Service
+from rpcb.service import Service
 
 import pika
 

@@ -1,4 +1,4 @@
-from service import Service
+from rpcb.service import Service
 import threading
 import time
 import random
