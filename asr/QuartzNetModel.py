@@ -199,11 +199,12 @@ class QuartznetModel(DispatchModel):
         if len(wav_ios) > self.max_batch_size:
             logging.warning("批处理数量超过最大值，将截断，截断数量为{:d}".format(len(wav_ios)-self.max_batch_size))
         pre_time = time.time()
+        # 10个音频总用时小于10ms,可忽略
         for wav in wav_ios:
             np_audio, secs = self.convert_wave2np(wav)
             logging.debug("推理音频时长为{:.3f}s".format(secs)) 
             self.data_layer.set_signal(np_audio)
-        logging.debug("音频处理总用时{:.3f}".format(time.time()-pre_time))
+        logging.info("音频处理总用时{:.3f}".format(time.time()-pre_time))
         batch = next(iter(self.data_loader))
         self.data_layer.clear() # 使用后必须清除内存
         audio_signal, audio_signal_len = batch

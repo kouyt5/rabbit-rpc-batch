@@ -61,7 +61,7 @@ class BatchMessageDispatcher:
         message = {'body': body, 'correlation_id':properties.correlation_id,
                     'reply_to':properties.reply_to, 'delivery_tag':delivery_tag}
         self.safe_append_queue(message=message)
-        logging.info("添加一个消息入队")
+        logging.debug("添加一个消息入队")
         
     def safe_append_queue(self, message):
         """

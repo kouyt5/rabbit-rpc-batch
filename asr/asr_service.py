@@ -1,7 +1,8 @@
+import enum
 from rpcb.model import DispatchModel, ImplDispatchModel
 from rpcb.service import Service
 import os
-from typing import List
+from typing import Any, List
 import multiprocessing as mp
 import time, io
 
@@ -20,27 +21,23 @@ class AsrService(Service):
         self.model = model
         self.pool = ThreadPoolExecutor(max_workers=os.cpu_count())
 
-    
+    # @catch_exceptions
     def __call__(self, bodys: List[bytes]) -> List[bytes]:
         unpacked_result = [self.unpack_msg(body) for body in bodys]  # unpack后的数据[{key, value}...]
-        model_needed_datas = self.prepare_data(unpacked_result)  # 处理音频为模型支持的输入格式
+        model_needed_datas, status = self.prepare_data(unpacked_result)  # 处理音频为模型支持的输入格式
         # 算法结果
         model_results = self.model.schedulable_infer(model_needed_datas)  # ["你好", "今天天气..",....]
-        # 结果封装
-        total_result = []
-        for model_result in model_results:
-            total_result.append({
-                "sentence": model_result,
-                "other": "other"
-            })
+        # 打包
+        return [self.pack_msg(result, status) for (result, status) in zip(model_results, status)]
 
-        return [self.pack_msg(result) for result in total_result]
-
-    def pack_msg(self, one_body:bytes) -> bytes:
+    def pack_msg(self, result:str, status:int) -> Any:
         """
         封装一个消息，用特定格式
         """
-        return msgpack.packb(one_body)
+        return msgpack.packb({
+                "sentence": result,
+                "other": status
+            })
     
     def unpack_msg(self, one_body:bytes) -> bytes:
         """
@@ -65,8 +62,8 @@ class AsrService(Service):
         results = list(results)
         results.sort(key=lambda item:item[0])
         seq_result = [results[i][1] for i in range(len(results))]  # [io.BytesIO(), io.BytesIO()....]
-        logging.info("线程运行+结果封装:"+str(time.time()-pre_time))
-        return seq_result
+        logging.info("音频格式转换用时:"+str(time.time()-pre_time))
+        return seq_result, [results[i][2] for i in range(len(results))]  # [io.BytesIO(),...], [200,200...]
         
 
     # try catch如果异常如何返回
@@ -78,6 +75,7 @@ class AsrService(Service):
         audio = io.BytesIO(audio)
         format=data['format']
         out_io = io.BytesIO()
+        status = Status.SUCCESS
         if format=='aac' or format=='mp3':
             try:
                 data = AudioSegment.from_file(audio)
@@ -87,6 +85,7 @@ class AsrService(Service):
                 sf.write(out_io, np.zeros((1600,), dtype=np.float32), samplerate=16000, 
                                 subtype='PCM_16', format='WAV')
                 out_io.seek(0)
+                status = Status.FORMAT_ERROR
         elif format=='wav':
             out_io = audio  # 如果wav格式有问题，由下一层处理
         else:
@@ -94,8 +93,14 @@ class AsrService(Service):
             sf.write(out_io, np.zeros((1600,), dtype=np.float32), samplerate=16000, 
                             subtype='PCM_16', format='WAV')
             out_io.seek(0)
-        return (seq, out_io)
+            status = Status.UNKNOWN_FORMAT
+        logging.info("status"+str(status.value))
+        return (seq, out_io, status.value)
         
+class Status(enum.Enum):
+    SUCCESS=200
+    FORMAT_ERROR=401
+    UNKNOWN_FORMAT=402
 
         
 if __name__ == '__main__':
