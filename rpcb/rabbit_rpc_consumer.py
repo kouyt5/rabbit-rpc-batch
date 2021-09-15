@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=C0111,C0103,R0205
 
-from rpcb.message_dispatch import MessageDispatch, SimpleService
-from rpcb.dispatcher.batch_message_dispatch import BatchMessageDispatcher
+from common.rpcb.message_dispatch import MessageDispatch, SimpleService
+from common.rpcb.dispatcher.batch_message_dispatch import BatchMessageDispatcher
 import functools
 import logging
 import time
@@ -16,11 +16,17 @@ LOGGER = logging.getLogger(__name__)
 
 class SelectRabbitConsumer:
 
-    def __init__(self, prefech_count:int=10, exchange:str='', exchange_type:str='topic', queue:str='', routing_key:str=''):
+    def __init__(self, prefech_count: int = 10, exchange: str = '', exchange_type: str = 'topic', queue: str = '',
+                 routing_key: str = '', host: str = 'localhost', port: int = 5672, username: str = 'guest',
+                 password: str = 'guest'):
         """Create a new instance of the consumer class, passing in the AMQP
         URL used to connect to RabbitMQ.
         :param str amqp_url: The AMQP url to connect with
         """
+        self.host = host
+        self.port = port
+        self.username = username
+        self.password = password
         self.EXCHANGE = exchange
         self.EXCHANGE_TYPE = exchange_type  # ExchangeType.topic
         self.QUEUE = queue
@@ -37,21 +43,21 @@ class SelectRabbitConsumer:
         self._prefetch_count = prefech_count
         self.message_dispatcher = None
 
-    def message_send_and_ack(self, body:bytes, correlation_id:str, reply_to:str, delivery_tag:str):
+    def message_send_and_ack(self, body: bytes, correlation_id: str, reply_to: str, delivery_tag: str):
         """
         rpc回传一个消息，并且确认
         """
-        while(self._channel is None):
+        while (self._channel is None):
             logging.warning("channel为空，等待100ms重试")
             time.sleep(0.1)
         self._channel.basic_publish(exchange='',
-                        routing_key=reply_to,
-                        properties=pika.BasicProperties(correlation_id = \
-                                                         correlation_id),
-                        body=body)
+                                    routing_key=reply_to,
+                                    properties=pika.BasicProperties(correlation_id= \
+                                                                        correlation_id),
+                                    body=body)
         self._channel.basic_ack(delivery_tag=delivery_tag)
 
-    def set_message_dispatcher(self, message_dispatcher:MessageDispatch):
+    def set_message_dispatcher(self, message_dispatcher: MessageDispatch):
         """
         设置消息调度器
         """
@@ -67,8 +73,9 @@ class SelectRabbitConsumer:
         """
         LOGGER.info('Connecting to %s', "chenc.icu")
         return pika.SelectConnection(
-            parameters=pika.ConnectionParameters(host='localhost', port='5672', 
-                credentials=pika.PlainCredentials(username='guest', password='guest')),
+            parameters=pika.ConnectionParameters(host=self.host, port=self.port,
+                                                 credentials=pika.PlainCredentials(username=self.username,
+                                                                                   password=self.password)),
             on_open_callback=self.on_connection_open,
             on_open_error_callback=self.on_connection_open_error,
             on_close_callback=self.on_connection_closed)
@@ -194,7 +201,7 @@ class SelectRabbitConsumer:
         """
         LOGGER.info('Declaring queue %s', queue_name)
         cb = functools.partial(self.on_queue_declareok, userdata=queue_name)
-        self._channel.queue_declare(queue=queue_name, callback=cb,durable=True,)
+        self._channel.queue_declare(queue=queue_name, callback=cb, durable=True, )
 
     def on_queue_declareok(self, _unused_frame, userdata):
         """Method invoked by pika when the Queue.Declare RPC call made in
@@ -292,7 +299,8 @@ class SelectRabbitConsumer:
                     basic_deliver.delivery_tag, properties.app_id, len(body))
 
         # 把消息提交给消息调度器
-        self.message_dispatcher.deliver_message(body=body, properties=properties, delivery_tag=basic_deliver.delivery_tag)
+        self.message_dispatcher.deliver_message(body=body, properties=properties,
+                                                delivery_tag=basic_deliver.delivery_tag)
         # self.acknowledge_message(basic_deliver.delivery_tag)
 
     def acknowledge_message(self, delivery_tag):
@@ -373,7 +381,7 @@ class ReconnectingManager:
     ExampleConsumer indicates that a reconnect is necessary.
     """
 
-    def __init__(self, consumer:SelectRabbitConsumer):
+    def __init__(self, consumer: SelectRabbitConsumer):
         self._reconnect_delay = 0
         self._consumer = consumer
 
@@ -417,10 +425,11 @@ def main():
     service = SimpleService()
     # service = AsrService(model=model)
 
-    rabbit_consumer = SelectRabbitConsumer(prefech_count=10, exchange='test', exchange_type=ExchangeType.direct, queue='test', routing_key='test')
+    rabbit_consumer = SelectRabbitConsumer(prefech_count=10, exchange='test', exchange_type=ExchangeType.direct,
+                                           queue='test', routing_key='test')
     message_dispatch = BatchMessageDispatcher(rabbit_consumer.message_send_and_ack, max_batch_size=32,
-                                        max_waiting_time=0.1, max_queue_size=32,
-                                        service=service)
+                                              max_waiting_time=0.1, max_queue_size=32,
+                                              service=service)
     rabbit_consumer.set_message_dispatcher(message_dispatcher=message_dispatch)
     reconnect_manager = ReconnectingManager(rabbit_consumer)
     reconnect_manager.run()

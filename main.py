@@ -67,4 +67,4 @@ def main3():
     reconnect_manager.run()
 
 if __name__=="__main__":
-    main3()
+    main()

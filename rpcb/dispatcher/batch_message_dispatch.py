@@ -1,3 +1,4 @@
+from rpcb.message_dispatch import MessageDispatch
 from rpcb.service import Service
 import threading
 import time
@@ -11,7 +12,7 @@ import pika.adapters.blocking_connection
 """
 消息调度器实现，用于批处理数据，多个数据来了会打包为一个batch输入到模型中，从而提高整体的吞吐量
 """
-class BatchMessageDispatcher:
+class BatchMessageDispatcher(MessageDispatch):
     def __init__(self, callback, max_queue_size:int=32, max_waiting_time:float=0.1,
                     service:Service=None, max_batch_size=10):
         self.safe_queue = queue.Queue(maxsize=max_queue_size)  # 线程安全队列，用于存放数据
