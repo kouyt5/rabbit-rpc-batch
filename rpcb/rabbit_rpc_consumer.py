@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=C0111,C0103,R0205
 
-from common.rpcb.message_dispatch import MessageDispatch, SimpleService
-from common.rpcb.dispatcher.batch_message_dispatch import BatchMessageDispatcher
+from rpcb.message_dispatch import MessageDispatch, SimpleService
+from rpcb.dispatcher.batch_message_dispatch import BatchMessageDispatcher
 import functools
 import logging
 import time
@@ -71,7 +71,7 @@ class SelectRabbitConsumer:
         will be invoked by pika.
         :rtype: pika.SelectConnection
         """
-        LOGGER.info('Connecting to %s', "chenc.icu")
+        LOGGER.info('Connecting to %s', self.host)
         return pika.SelectConnection(
             parameters=pika.ConnectionParameters(host=self.host, port=self.port,
                                                  credentials=pika.PlainCredentials(username=self.username,
