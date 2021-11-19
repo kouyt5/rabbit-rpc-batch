@@ -13,6 +13,7 @@
 
 ## 部署
 
+### docker
 1. 在根目录输入`docker-compose up`启动rabbitmq
 2. 在本目录下，输入`docker-compose up`，启动算法
 3. 启动rabbit-rpc-clent客户端项目
@@ -20,4 +21,6 @@
 ```shell
 curl -X POST -F "audio=@/path/to/your/audio.wav" -F "format=wav" http://localhost:8083/asr
 ```
+### 其他
+安装requirements.txt环境后，python main.py
 

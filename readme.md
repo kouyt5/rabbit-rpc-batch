@@ -53,7 +53,5 @@
 ## 项目启动
 
 + 启动消息队列： `docker-compose up`
-+ 启动算法: `python main.py`
++ 到每个目录下启动算法: `python main.py`
 + 启动client: ...
-
-main.py中有启动的示例。可根据需求自行封装。
