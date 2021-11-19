@@ -10,3 +10,14 @@
 + QuartzNet15x5Base-Zh.nemo
 
 分别为中文和英文模型文件。模型初始化时指定路径即可。如果需要语言模型，需要基于kenlm训练
+
+## 部署
+
+1. 在根目录输入`docker-compose up`启动rabbitmq
+2. 在本目录下，输入`docker-compose up`，启动算法
+3. 启动rabbit-rpc-clent客户端项目
+4. 访问接口：
+```shell
+curl -X POST -F "audio=@/path/to/your/audio.wav" -F "format=wav" http://localhost:8083/asr
+```
+

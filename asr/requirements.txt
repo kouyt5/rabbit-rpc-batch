@@ -1,0 +1,8 @@
+nemo-toolkit[asr]==1.2.0
+torch==1.8.1
+pika==1.2.0
+msgpack==1.0.2
+psutil==5.8.0
+pydub==0.25.1
+soundfile==0.10.3.post1
+librosa==0.8.0

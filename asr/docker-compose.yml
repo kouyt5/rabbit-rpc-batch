@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  asr-cn:
+    build: .
+    volumes:
+      - ../:/workspace
+    working_dir: /workspace/asr
+    command: main.py
+    entrypoint: python
+    #runtime: nvidia
+    network_mode: host
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
