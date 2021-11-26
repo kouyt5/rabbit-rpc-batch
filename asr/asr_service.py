@@ -1,3 +1,4 @@
+from rpcb.decorator.catch_except import catch_excepts
 from rpcb.model import DispatchModel, ImplDispatchModel
 from rpcb.service import Service
 import os
@@ -21,7 +22,7 @@ class AsrService(Service):
         self.model = model
         self.pool = ThreadPoolExecutor(max_workers=os.cpu_count())
 
-    # @catch_exceptions
+    @catch_excepts
     def __call__(self, bodys: List[bytes]) -> List[bytes]:
         unpacked_result = [self.unpack_msg(body) for body in bodys]  # unpack后的数据[{key, value}...]
         model_needed_datas, status = self.prepare_data(unpacked_result)  # 处理音频为模型支持的输入格式
