@@ -6,3 +6,4 @@ psutil==5.8.0
 pydub==0.25.1
 soundfile==0.10.3.post1
 librosa==0.8.0
+concurrent_log_handler
