@@ -2,6 +2,8 @@
 <p align="left">
     <a href="./LICENSE.txt"><img alt="MIT License" src="https://img.shields.io/github/license/kouyt5/rabbit-rpc-batch?style=plastic" /></a>
     <a href="https://www.repostatus.org/#active"><img alt="状态" src="https://www.repostatus.org/badges/latest/active.svg" /></a>
+    <a href="https://lgtm.com/projects/g/kouyt5/rabbit-rpc-batch/context:python"><img alt="代码质量" src="https://img.shields.io/lgtm/grade/python/g/kouyt5/rabbit-rpc-batch.svg?logo=lgtm&logoWidth=18"/></a>
+    <a href="https://lgtm.com/projects/g/kouyt5/rabbit-rpc-batch/alerts/"><img alt="Total alerts" src="https://img.shields.io/lgtm/alerts/g/kouyt5/rabbit-rpc-batch.svg?logo=lgtm&logoWidth=18"/></a>
 </p>
 
 ## 项目简介
