@@ -1,4 +1,8 @@
 # 非阻塞消息队列批处理框架
+<p align="left">
+    <a href="./LICENSE.txt"><img alt="MIT License" src="https://img.shields.io/github/license/kouyt5/rabbit-rpc-batch?style=plastic" /></a>
+    <a href="https://www.repostatus.org/#active"><img alt="状态" src="https://www.repostatus.org/badges/latest/active.svg" /></a>
+</p>
 
 ## 项目简介
 
